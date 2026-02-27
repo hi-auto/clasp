@@ -17,7 +17,7 @@
 // of clasp.
 
 import Debug from 'debug';
-import {OAuth2Client} from 'google-auth-library';
+import {type CredentialsClient} from '../auth/auth.js';
 import {GaxiosError} from 'googleapis-common';
 import {SetNonNullable, SetRequired, SetRequiredDeep} from 'type-fest';
 
@@ -75,7 +75,7 @@ export type ProjectOptionsWithScript = SetRequired<ProjectOptions, 'scriptId'>;
  * @property {FileOptions} files - Options related to file management.
  */
 export type ClaspOptions = {
-  credentials?: OAuth2Client;
+  credentials?: CredentialsClient;
   configFilePath: string;
   project?: ProjectOptions;
   files: FileOptions;

@@ -20,7 +20,7 @@ import path from 'path';
 import Debug from 'debug';
 import {findUpSync} from 'find-up';
 import fs from 'fs/promises';
-import {OAuth2Client} from 'google-auth-library';
+import {type CredentialsClient} from '../auth/auth.js';
 import JSON5 from 'json5';
 import splitLines from 'split-lines';
 import stripBom from 'strip-bom';
@@ -53,7 +53,7 @@ const DEFAULT_CLASP_IGNORE = [
  * @property {string} [rootDir] - The root directory of the project if no config file is found. Defaults to process.cwd().
  */
 export type InitOptions = {
-  credentials?: OAuth2Client;
+  credentials?: CredentialsClient;
   configFile?: string;
   ignoreFile?: string;
   rootDir?: string;

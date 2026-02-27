@@ -19,7 +19,7 @@ import {readFileSync} from 'fs';
 import os from 'os';
 import path from 'path';
 import Debug from 'debug';
-import {GoogleAuth, OAuth2Client} from 'google-auth-library';
+import {BaseExternalAccountClient, GoogleAuth, OAuth2Client} from 'google-auth-library';
 import {google} from 'googleapis';
 import {AuthorizationCodeFlow} from './auth_code_flow.js';
 import {CredentialStore} from './credential_store.js';
@@ -29,6 +29,8 @@ import {DEFAULT_CLASP_OAUTH_CLIENT_ID, DEFAULT_CLASP_OAUTH_CLIENT_SECRET} from '
 import {ServerlessAuthorizationCodeFlow} from './serverless_auth_code_flow.js';
 
 const debug = Debug('clasp:auth');
+
+export type CredentialsClient = OAuth2Client | BaseExternalAccountClient;
 
 type InitOptions = {
   authFilePath?: string;
@@ -43,7 +45,7 @@ type InitOptions = {
  * @property {string} user - The identifier for the current user (e.g., 'default' or a custom key).
  */
 export type AuthInfo = {
-  credentials?: OAuth2Client;
+  credentials?: CredentialsClient;
   credentialStore?: CredentialStore;
   user: string;
 };
@@ -80,11 +82,11 @@ export async function initAuth(options: InitOptions): Promise<AuthInfo> {
 
 /**
  * Fetches user information (email, ID) using the provided OAuth2 client.
- * @param {OAuth2Client} credentials - An authorized OAuth2 client.
+ * @param {CredentialsClient} credentials - An authorized auth client.
  * @returns {Promise<{email?: string | null; id?: string | null} | undefined>}
  * User's email and ID, or undefined if an error occurs or no data is returned.
  */
-export async function getUserInfo(credentials: OAuth2Client) {
+export async function getUserInfo(credentials: CredentialsClient) {
   debug('Fetching user info');
   const api = google.oauth2('v2');
   try {
@@ -278,8 +280,7 @@ function createDefaultOAuthClient() {
 /**
  * Attempts to create an OAuth2Client using Google Application Default Credentials (ADC).
  * This is typically used in server environments where credentials can be automatically discovered.
- * @returns {Promise<OAuth2Client | undefined>} An OAuth2Client if ADC are available and valid,
- * otherwise undefined.
+ * @returns {Promise<CredentialsClient | undefined>} An auth client using application default credentials.
  */
 export async function createApplicationDefaultCredentials() {
   const defaultCreds = await new GoogleAuth({
@@ -296,10 +297,10 @@ export async function createApplicationDefaultCredentials() {
       'https://www.googleapis.com/auth/cloud-platform',
     ],
   }).getClient();
-  // Remove this check after https://github.com/googleapis/google-auth-library-nodejs/issues/1677 fixed
-  if (defaultCreds instanceof OAuth2Client) {
-    debug('Created service account credentials, id: %s', defaultCreds._clientId);
-    return defaultCreds as OAuth2Client;
+  if (defaultCreds instanceof OAuth2Client || defaultCreds instanceof BaseExternalAccountClient) {
+    debug('Created ADC credentials, type: %s', defaultCreds.constructor.name);
+    return defaultCreds;
   }
+  debug('Unsupported ADC credential type: %s', defaultCreds.constructor.name);
   return undefined;
 }

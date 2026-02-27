@@ -34,7 +34,7 @@ export const command = new Command('show-authorized-user')
       user = await getUserInfo(auth.credentials);
     }
 
-    const clientId = auth.credentials?._clientId;
+    const clientId = auth.credentials && '_clientId' in auth.credentials ? auth.credentials._clientId : undefined;
     const clientType = getOAuthClientType(clientId);
 
     if (options.json) {
