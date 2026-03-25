@@ -284,16 +284,9 @@ function createDefaultOAuthClient() {
  */
 export async function createApplicationDefaultCredentials() {
   const scopes = [
-    'https://www.googleapis.com/auth/script.deployments', // Apps Script deployments
     'https://www.googleapis.com/auth/script.projects', // Apps Script management
-    'https://www.googleapis.com/auth/script.webapp.deploy', // Apps Script Web Apps
-    'https://www.googleapis.com/auth/drive.metadata.readonly', // Drive metadata
-    'https://www.googleapis.com/auth/drive.file', // Create Drive files
-    'https://www.googleapis.com/auth/service.management', // Cloud Project Service Management API
-    'https://www.googleapis.com/auth/logging.read', // StackDriver logs
-    'https://www.googleapis.com/auth/userinfo.email', // User email address
-    'https://www.googleapis.com/auth/userinfo.profile',
-    'https://www.googleapis.com/auth/cloud-platform',
+    'https://www.googleapis.com/auth/script.deployments', // Apps Script deployments
+    'https://www.googleapis.com/auth/drive.file', // Drive file access
   ];
   const subject = process.env.CLASP_SUBJECT;
   const defaultCreds = await new GoogleAuth({
