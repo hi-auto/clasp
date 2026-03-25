@@ -19,7 +19,7 @@ import {readFileSync} from 'fs';
 import os from 'os';
 import path from 'path';
 import Debug from 'debug';
-import {BaseExternalAccountClient, GoogleAuth, OAuth2Client} from 'google-auth-library';
+import {BaseExternalAccountClient, GoogleAuth, JWT, OAuth2Client} from 'google-auth-library';
 import {google} from 'googleapis';
 import {AuthorizationCodeFlow} from './auth_code_flow.js';
 import {CredentialStore} from './credential_store.js';
@@ -30,7 +30,7 @@ import {ServerlessAuthorizationCodeFlow} from './serverless_auth_code_flow.js';
 
 const debug = Debug('clasp:auth');
 
-export type CredentialsClient = OAuth2Client | BaseExternalAccountClient;
+export type CredentialsClient = OAuth2Client | BaseExternalAccountClient | JWT;
 
 type InitOptions = {
   authFilePath?: string;
@@ -283,21 +283,27 @@ function createDefaultOAuthClient() {
  * @returns {Promise<CredentialsClient | undefined>} An auth client using application default credentials.
  */
 export async function createApplicationDefaultCredentials() {
+  const scopes = [
+    'https://www.googleapis.com/auth/script.deployments', // Apps Script deployments
+    'https://www.googleapis.com/auth/script.projects', // Apps Script management
+    'https://www.googleapis.com/auth/script.webapp.deploy', // Apps Script Web Apps
+    'https://www.googleapis.com/auth/drive.metadata.readonly', // Drive metadata
+    'https://www.googleapis.com/auth/drive.file', // Create Drive files
+    'https://www.googleapis.com/auth/service.management', // Cloud Project Service Management API
+    'https://www.googleapis.com/auth/logging.read', // StackDriver logs
+    'https://www.googleapis.com/auth/userinfo.email', // User email address
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/cloud-platform',
+  ];
+  const subject = process.env.CLASP_SUBJECT;
   const defaultCreds = await new GoogleAuth({
-    scopes: [
-      'https://www.googleapis.com/auth/script.deployments', // Apps Script deployments
-      'https://www.googleapis.com/auth/script.projects', // Apps Script management
-      'https://www.googleapis.com/auth/script.webapp.deploy', // Apps Script Web Apps
-      'https://www.googleapis.com/auth/drive.metadata.readonly', // Drive metadata
-      'https://www.googleapis.com/auth/drive.file', // Create Drive files
-      'https://www.googleapis.com/auth/service.management', // Cloud Project Service Management API
-      'https://www.googleapis.com/auth/logging.read', // StackDriver logs
-      'https://www.googleapis.com/auth/userinfo.email', // User email address
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/cloud-platform',
-    ],
+    scopes,
+    clientOptions: subject ? {subject} : undefined,
   }).getClient();
-  if (defaultCreds instanceof OAuth2Client || defaultCreds instanceof BaseExternalAccountClient) {
+  if (subject) {
+    debug('Using domain-wide delegation, subject: %s', subject);
+  }
+  if (defaultCreds instanceof JWT || defaultCreds instanceof OAuth2Client || defaultCreds instanceof BaseExternalAccountClient) {
     debug('Created ADC credentials, type: %s', defaultCreds.constructor.name);
     return defaultCreds;
   }
